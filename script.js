@@ -1,4 +1,4 @@
-﻿// --- DADOS DE CONEXÃO SUPABASE ---
+// --- DADOS DE CONEXÃO SUPABASE ---
 const SUPABASE_URL = 'https://xobranulydiqbswhqucf.supabase.co';
 // A chave abaixo é a chave pública (anon key).
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhvYnJhbnVseWRpcWJzd2hxdWNmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMyMjg3NDMsImV4cCI6MjA3ODgwNDc0M30.__hP0V-vrDMiA5wbPrrBWhTISpOuZbxbdmZsmsr_S9U';
@@ -126,43 +126,44 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Funções de Ajuda (Aplicações em Tempo Real) ---
     async function fetchData(tableName, filterStatus = 'A') {
         let query = supabase.from(tableName).select('*');
-        if (tableName !== 'historico') {
-            if (filterStatus === 'I') {
-                 query = query.eq('status', 'I');
+
+        // Regra especial para usuários: exibir somente o usuário logado (se conhecido)
+        if (tableName === 'usuarios') {
+            // se currentUserId está definido, exibimos apenas o registro do usuário logado
+            if (currentUserId) {
+                query = supabase.from('usuarios').select('*').eq('id', currentUserId);
             } else {
-                 query = query.eq('status', 'A');
+                // fallback: mantém regra anterior (nunca exibe super, admin vê admin/comum)
+                query = query.neq('nivel_acesso', 'super');
+                if (userProfile === 'Administrador') {
+                    query = query.in('nivel_acesso', ['admin', 'comum']);
+                }
+                query = query.order('usuario', { ascending: true });
+            }
+        } else {
+
+            if (tableName !== 'historico') {
+                if (filterStatus === 'I') {
+                    query = query.eq('status', 'I');
+                } else {
+                    query = query.eq('status', 'A');
+                }
+            }
+
+            if (tableName === 'historico') {
+                query = query.order('data_movimentacao', { ascending: false });
+            } else {
+                const column = tableName === 'item' ? 'item' :
+                               tableName === 'local' ? 'local' :
+                               tableName === 'categoria' ? 'nome_categoria' : 'id';
+                query = query.order(column, { ascending: true });
             }
         }
-        
-        if (tableName === 'usuarios') {
-             // REGRA: Nunca exibe o SUPERADMIN (nível 'super')
-             query = query.neq('nivel_acesso', 'super');
-             if (userProfile === 'Administrador') {
-                 // REGRA: Admin só vê Admin e Comum
-                 query = query.in('nivel_acesso', ['admin', 'comum']);
-             }
-             
-             query = query.order('usuario', { ascending: true });
-        }
-        
-        if (tableName === 'historico') {
-             query = query.order('data_movimentacao', { ascending: false });
-        } else if (tableName !== 'usuarios') {
-             // CORREÇÃO: Usar nomes de tabelas no singular
-             const column = tableName === 'item' ? 
-             'item' : 
-                            tableName === 'local' ? 
-             'local' : 
-                            tableName === 'categoria' ? 
-             'nome_categoria' : 'id';
-             query = query.order(column, { ascending: true });
-        }
-        
+
         const { data, error } = await query;
         if (error) {
             console.error(`Erro ao buscar dados de ${tableName}:`, error);
-            // Mensagem de RLS para o usuário
-            if (error.code === '42501') { 
+            if (error.code === '42501') {
                 alert("Acesso Negado (RLS): Seu perfil não tem permissão de leitura nesta tabela.");
             }
             return [];
@@ -209,100 +210,126 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderButtons(tabName) {
         let buttonsHtml = '<div class="action-buttons">';
         const isCommon = userProfile === 'Operador';
-        const isAdmin = userProfile === 'Administrador'; 
+        const isAdmin = userProfile === 'Administrador';
         const isSuper = userProfile === 'SUPERADMIN';
         const isSuperOrAdmin = isSuper || isAdmin;
-        
+
         // Regra: Comum não edita, Admin/Super edita (exceto histórico)
         const canEdit = isSuperOrAdmin && tabName !== 'historico';
-        // Regra: Comum não restaura, Admin/Super restaura
         const canRestore = isSuperOrAdmin;
-        // Regra: Lançamentos (Entrada/Saída) apenas para Admin/Super na aba Item
-        const canLancamento = tabName === 'item' && isSuperOrAdmin; // CORRIGIDO: de 'itens' para 'item'
-        
-        // Regra: Apagar (DELETE PERMANENTE) apenas para SUPER e NÃO PODE ser no Histórico
+        const canLancamento = tabName === 'item' && isSuperOrAdmin;
         const canDelete = isSuper && tabName !== 'historico';
-        
+
         if (canEdit) {
             buttonsHtml += `<button id="btn-incluir-novo"><i class="fas fa-plus-circle"></i> Incluir Novo</button>`;
         }
-        
-        // CORRIGIDO: Nomes de tabelas no singular
+
+        // Inativar / Restaurar botões (mantidos)
         if (['item', 'local', 'categoria', 'usuarios'].includes(tabName) && canEdit) {
             buttonsHtml += `<button id="btn-inativar"><i class="fas fa-minus-circle"></i> Inativar</button>`;
         }
-        
-        // CORRIGIDO: Nomes de tabelas no singular
         if (['item', 'local', 'categoria', 'usuarios'].includes(tabName) && canRestore) {
              buttonsHtml += `<button id="btn-restaurar"><i class="fas fa-undo"></i> Restaurar</button>`;
         }
-        
+
+        // Botões de Lançamento (estoque)
         if (canLancamento) {
              buttonsHtml += `<button id="btn-lancar-entrada"><i class="fas fa-arrow-down"></i> Lançar Entrada</button>`;
              buttonsHtml += `<button id="btn-lancar-saida"><i class="fas fa-arrow-up"></i> Lançar Saída</button>`;
         }
-        
+
+        // Botão AJUSTAR ALERTA — disponível para Admin e SUPER na aba item
+        if (tabName === 'item' && (isAdmin || isSuper)) {
+            buttonsHtml += `<button id="btn-ajustar-alerta"><i class="fas fa-bell"></i> Ajustar alerta</button>`;
+        }
+
+        // Botão ATUALIZAR SENHA — disponível na aba usuários (apenas para o usuário logado)
+        if (tabName === 'usuarios') {
+            buttonsHtml += `<button id="btn-atualizar-senha"><i class="fas fa-key"></i> Atualizar senha</button>`;
+        }
+
         if (canDelete) {
              buttonsHtml += `<button id="btn-apagar" class="btn-apagar-super"><i class="fas fa-trash"></i> Apagar (SUPER)</button>`;
         }
-        
+
         buttonsHtml += '</div>';
         return buttonsHtml;
     }
     
     function renderTable(tabName, data) {
         let headers = [];
-        // CORRIGIDO: Nomes de tabelas no singular
         if (tabName === 'item') {
             headers = ['ID', 'Item', 'Categoria', 'Qtd. Atual', 'Alerta', 'Status'];
-        } else if (tabName === 'local') { 
+        } else if (tabName === 'local') {
             headers = ['ID', 'Local', 'Status'];
-        } else if (tabName === 'categoria') { 
+        } else if (tabName === 'categoria') {
             headers = ['ID', 'Categoria', 'Status'];
         } else if (tabName === 'usuarios') {
             headers = ['ID (UID)', 'Usuário', 'Perfil', 'Status'];
         } else if (tabName === 'historico') {
-             headers = ['Data/Hora', 'Item', 'Tipo', 'Qtd', 'Local Destino', 'Usuário Resp.'];
+            headers = ['Data/Hora', 'Item', 'Tipo', 'Qtd', 'Local Destino', 'Usuário Resp.'];
         }
-        
+
         let tableHtml = `<table class="data-table" id="table-${tabName}"><thead><tr>`;
         headers.forEach(h => tableHtml += `<th>${h}</th>`);
         tableHtml += '</tr></thead><tbody>';
-        
+
         data.forEach(item => {
             let rowData = [];
-            
-            // CORRIGIDO: Nomes de tabelas no singular
+            let lowStockClass = false;
+
             if (tabName === 'item') {
-                 rowData = [item.id, item.item, item.categoria, item.quantidade, item.alerta, item.status];
-            } else if (tabName === 'local') { 
-                         rowData = [item.id, item.local, item.status]; 
-            } else if (tabName === 'categoria') { 
-                 rowData = [item.id, item.nome_categoria || item.categoria, item.status]; 
+                rowData = [item.id, item.item, item.categoria, item.quantidade, item.alerta, item.status];
+
+                // verifica estoque baixo
+                const alertaVal = parseInt(item.alerta) || 0;
+                const quantidadeVal = parseInt(item.quantidade) || 0;
+
+                if (quantidadeVal <= alertaVal) {
+                    lowStockClass = true;
+                }
+            } else if (tabName === 'local') {
+                rowData = [item.id, item.local, item.status];
+            } else if (tabName === 'categoria') {
+                rowData = [item.id, item.nome_categoria || item.categoria, item.status];
             } else if (tabName === 'usuarios') {
-                 rowData = [item.id, item.usuario, mapDbToDisplay(item.nivel_acesso), item.status];
- 
+                rowData = [item.id, item.usuario, mapDbToDisplay(item.nivel_acesso), item.status];
             } else if (tabName === 'historico') {
-                 rowData = [
-                     new Date(item.data_movimentacao).toLocaleString(),
-                     item.nome_item,
-                     
-                     item.tipo_movimento,
-                     item.quantidade_movimentada,
-                     item.local_destino || '-', 
-                     item.usuario_responsavel_nome,
-                 ];
+                rowData = [
+                    new Date(item.data_movimentacao).toLocaleString(),
+                    item.nome_item,
+                    item.tipo_movimento,
+                    item.quantidade_movimentada,
+                    item.local_destino || '-',
+                    item.usuario_responsavel_nome
+                ];
             }
-           
-            tableHtml += `<tr data-id="${item.id}">`;
-            rowData.forEach(v => tableHtml += `<td>${v}</td>`);
+
+            tableHtml += `<tr data-id="${item.id}" class="${lowStockClass ? 'low-stock' : ''}">`;
+
+            rowData.forEach((v, idx) => {
+                // ABA ITENS — Coluna do NOME recebe o texto (BAIXO) em vermelho
+                if (tabName === 'item' && idx === 1 && lowStockClass) {
+                    tableHtml += `
+                        <td>
+                            ${v} 
+                            <strong style="color:#dc3545; font-weight:bold;">
+                                (BAIXO)
+                            </strong>
+                        </td>`;
+                } else {
+                    tableHtml += `<td>${v}</td>`;
+                }
+            });
+
             tableHtml += `</tr>`;
         });
-        
+
         tableHtml += '</tbody></table>';
         return tableHtml;
     }
     
+    // Substituir por este código
     function setupTabListeners(tabName) {
         const table = document.getElementById(`table-${tabName}`);
         if (table) {
@@ -311,20 +338,24 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (row && row.dataset.id) {
                     document.querySelectorAll('.data-table tr').forEach(r => r.classList.remove('selected-row'));
                     row.classList.add('selected-row');
- 
                     selectedRowId = row.dataset.id;
                 }
             });
         }
-        
+
         document.getElementById('btn-incluir-novo')?.addEventListener('click', () => showIncluirNovoModal(tabName));
         document.getElementById('btn-inativar')?.addEventListener('click', () => handleInativar(tabName));
         document.getElementById('btn-restaurar')?.addEventListener('click', () => showRestaurarModal(tabName));
         document.getElementById('btn-apagar')?.addEventListener('click', () => handleApagar(tabName));
-        if (tabName === 'item') { // CORRIGIDO: de 'itens' para 'item'
+        if (tabName === 'item') {
             document.getElementById('btn-lancar-entrada')?.addEventListener('click', () => showLancamentoModal(tabName, 'Entrada'));
             document.getElementById('btn-lancar-saida')?.addEventListener('click', () => showLancamentoModal(tabName, 'Saída'));
+            // novo: ajustar alerta
+            document.getElementById('btn-ajustar-alerta')?.addEventListener('click', () => showAjustarAlertaModal());
         }
+
+        // novo: atualizar senha (apenas abre modal para o usuário logado)
+        document.getElementById('btn-atualizar-senha')?.addEventListener('click', () => showUpdatePasswordModal());
     }
     
     // --- Modais e Confirmações ---
@@ -647,6 +678,100 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         };
     }
+
+    // --- Modal: Ajustar Alerta (Admin / SUPER) ---
+    async function showAjustarAlertaModal() {
+        if (!selectedRowId) {
+            alert('Selecione um item para ajustar o alerta.');
+            return;
+        }
+        // busca item
+        const { data: itemData, error: itemError } = await supabase.from('item').select('*').eq('id', selectedRowId).single();
+        if (itemError || !itemData) {
+            alert('Erro ao buscar item selecionado.');
+            return;
+        }
+        const atualAlerta = itemData.alerta || 0;
+        modalContentArea.innerHTML = `
+            <h3>Ajustar Alerta - ${itemData.item}</h3>
+            <label>Quantidade de alerta:</label>
+            <input type="number" id="input-ajustar-alerta" min="0" value="${atualAlerta}">
+            <p>Confirma alteração do valor de alerta?</p>
+            <div class="modal-buttons">
+                <button id="btn-confirmar-nao" class="btn-cancelar">Não</button>
+                <button id="btn-confirmar-sim" class="btn-confirmar">Sim</button>
+            </div>
+        `;
+        modal.style.display = 'block';
+        document.getElementById('btn-confirmar-sim').onclick = () => handleAjustarAlertaConfirm(selectedRowId);
+        document.getElementById('btn-confirmar-nao').onclick = closeModal;
+        window.onkeydown = (e) => { if (e.key === 'Escape') closeModal(); };
+    }
+
+    async function handleAjustarAlertaConfirm(itemId) {
+        const newVal = parseInt(document.getElementById('input-ajustar-alerta').value);
+        if (isNaN(newVal) || newVal < 0) {
+            alert('Valor de alerta inválido.');
+            return;
+        }
+        const { error } = await supabase.from('item').update({ alerta: newVal }).eq('id', itemId);
+        if (error) {
+            console.error('Erro ao ajustar alerta:', error);
+            alert('Erro ao atualizar alerta. Verifique o console.');
+        } else {
+            alert('Alerta atualizado com sucesso.');
+            closeModal();
+            await renderTab('item');
+        }
+    }
+
+    // --- Modal: Atualizar Senha (usuário logado) ---
+    function showUpdatePasswordModal() {
+        modalContentArea.innerHTML = `
+            <h3>Atualizar Senha</h3>
+            <label>Nova senha:</label>
+            <input type="password" id="input-nova-senha" placeholder="Digite a nova senha">
+            <label>Confirme a nova senha:</label>
+            <input type="password" id="input-confirma-senha" placeholder="Confirme a nova senha">
+            <p>Deseja alterar sua senha de acesso?</p>
+            <div class="modal-buttons">
+                <button id="btn-confirmar-nao" class="btn-cancelar">Não</button>
+                <button id="btn-confirmar-sim" class="btn-confirmar">Sim</button>
+            </div>
+        `;
+        modal.style.display = 'block';
+        document.getElementById('btn-confirmar-sim').onclick = () => handleUpdatePassword();
+        document.getElementById('btn-confirmar-nao').onclick = closeModal;
+        window.onkeydown = (e) => { if (e.key === 'Escape') closeModal(); };
+    }
+
+    async function handleUpdatePassword() {
+        const nova = document.getElementById('input-nova-senha').value || '';
+        const conf = document.getElementById('input-confirma-senha').value || '';
+        if (!nova || !conf) {
+            alert('Preencha ambos os campos de senha.');
+            return;
+        }
+        if (nova !== conf) {
+            alert('As senhas não coincidem.');
+            return;
+        }
+        // Atualiza a senha do usuário atualmente logado via Supabase Auth
+        try {
+            const { data, error } = await supabase.auth.updateUser({ password: nova });
+            if (error) {
+                console.error('Erro ao atualizar senha:', error);
+                alert('Erro ao atualizar senha. Verifique o console.');
+                return;
+            }
+            alert('Senha atualizada com sucesso.');
+            closeModal();
+        } catch (e) {
+            console.error('Erro inesperado ao atualizar senha:', e);
+            alert('Erro inesperado ao atualizar senha. Verifique o console.');
+        }
+    }
+
 
     async function handleLancamentoConfirm(tipoMovimento, item) {
         const isSuperOrAdmin = userProfile === 'SUPERADMIN' ||

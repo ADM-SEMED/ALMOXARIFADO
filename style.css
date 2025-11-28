@@ -1,12 +1,11 @@
-﻿/* Variáveis de cores */
+/* Variáveis de cores */
 :root {
     --color-primary: #007bff; /* Azul vibrante */
     --color-secondary: #0056b3; /* Azul escuro para hover */
     --color-background: #f8f9fa; /* Fundo claro (quase branco) */
     --color-text: #212529; /* Texto escuro */
     --color-game-accent: #ffc107; /* Amarelo para destaque gamificado */
-    
-    /* NOVAS VARIÁVEIS PARA CONFIRMAÇÃO */
+   
     --color-success: #28a745; /* Verde para 'Sim' (Sucesso) */
     --color-danger: #dc3545; /* Vermelho para 'Não' (Perigo/Cancelar) */
 }
@@ -242,3 +241,16 @@ header h1 {
 .hidden {
     display: none !important; 
 }
+
+/* --- Estilos para alerta de estoque baixo --- */
+.data-table tr.low-stock td {
+    background-color: rgba(220,53,69,0.07);
+}
+.alert-badge {
+    display: inline-block;
+    margin-left: 8px;
+    font-size: 0.95em;
+    color: var(--color-danger);
+    vertical-align: middle;
+}
+
