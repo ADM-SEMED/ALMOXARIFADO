@@ -1,88 +1,49 @@
 ﻿<!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-br">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Controle de Estoque</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-
+    <title>Gerenciamento de Estoque</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
-<div id="login-container" class="login-container">
-    <div class="login-box">
-        <h2><i class="fas fa-cubes"></i> Acesso ao Estoque</h2>
-        <input type="email" id="login-email" placeholder="E-mail">
-        <input type="password" id="login-password" placeholder="Senha">
-        <button id="login-btn">Entrar</button>
-        <p id="login-error" class="error-message" style="color:red; display:none;"></p>
+    <div id="login-screen">
+        <h2>LOGIN DO SISTEMA</h2>
+        <input type="text" id="login-usuario" placeholder="Usuário">
+        <input type="password" id="login-senha" placeholder="Senha">
+        <button id="btn-login"><i class="fas fa-sign-in-alt"></i> Entrar</button>
     </div>
-</div>
 
-<div id="app-container" class="app-container hidden">
-
-    <header class="app-header">
-        <h1>Sistema de Controle de Estoque</h1>
-        <div class="header-actions">
-            <button id="btn-config" class="config-button">
-                <i class="fas fa-cog"></i> Configurações
-            </button>
-            <button id="logout-btn" class="logout-button">
-                <i class="fas fa-sign-out-alt"></i> Sair
-            </button>
-        </div>
-    </header>
-
-    <nav id="tabs" class="tabs">
-        <button class="tab-button" data-tab="uniformes_roupas"><i class="fas fa-tshirt"></i> Unif. Roupas</button>
-        <button class="tab-button" data-tab="uniformes_calcados"><i class="fas fa-shoe-prints"></i> Unif. Calçados</button>
-        <button class="tab-button" data-tab="estoque_consumo"><i class="fas fa-box-open"></i> Material</button>
-        <button class="tab-button" data-tab="patrimonio"><i class="fas fa-chair"></i> Patrimônio</button>
-        <button class="tab-button" data-tab="pedidos"><i class="fas fa-file-invoice"></i> Pedidos</button>
-        <button class="tab-button" data-tab="historico"><i class="fas fa-history"></i> Histórico</button>
-        <button class="tab-button" data-tab="relatorios"><i class="fas fa-chart-bar"></i> Relatórios</button>
-        <button class="tab-button" data-tab="calculadora"><i class="fas fa-calculator"></i> Calculadora</button>
-    </nav>
-
-    <div id="tab-content" class="tab-content">
-        <p style="text-align:center; padding:20px; color:#666;">Selecione uma aba acima.</p>
-    </div>
-</div>
-
-<div id="global-modal" class="modal">
-    <div class="modal-content">
-        <span class="close-button" onclick="window.closeModal()">&times;</span>
-        <div id="modal-content-area"></div>
-    </div>
-</div>
-
-<div id="config-modal" class="config-modal">
-    <div class="config-modal-content">
-        <span class="config-close-button" onclick="window.closeConfigModal()">&times;</span>
-        <h2 class="config-modal-title"><i class="fas fa-cog"></i> Configurações</h2>
+    <div id="main-app" class="hidden">
+        <header>
+            <h1><i class="fas fa-cubes"></i> ADM - SEMED</h1>
+        </header>
+        <nav id="tabs">
+            <div class="tabs-left">
+                <button class="tab-button active" data-tab="item"><i class="fas fa-box"></i> Itens</button>
+                <button class="tab-button" data-tab="local"><i class="fas fa-warehouse"></i> Locais</button>
+                <button class="tab-button" data-tab="categoria"><i class="fas fa-tags"></i> Categorias</button>
+                <button class="tab-button" data-tab="historico"><i class="fas fa-history"></i> Histórico</button>
+                <button class="tab-button" data-tab="usuarios"><i class="fas fa-users"></i> Usuários</button>
+            </div>
+            
+            <div id="search-container" class="hidden">
+                <div class="search-wrapper">
+                    <input type="text" id="input-search-item" placeholder="Pesquisar item...">
+                    <i class="fas fa-search search-icon"></i>
+                </div>
+            </div>
+        </nav>
+        <main id="tab-content">
+        </main>
         
-        <div class="config-modal-body">
-            <aside class="config-sidebar">
-                <button class="config-submenu-button" onclick="window.navegarConfig('catalogo')"><i class="fas fa-tags"></i> Catálogo</button>
-                <button class="config-submenu-button" onclick="window.navegarConfig('categorias')"><i class="fas fa-layer-group"></i> Categorias</button>
-                <button class="config-submenu-button" onclick="window.navegarConfig('locais')"><i class="fas fa-map-marker-alt"></i> Locais</button>
-                <button class="config-submenu-button" onclick="window.navegarConfig('usuarios')"><i class="fas fa-users"></i> Usuários</button>
-                <button class="config-submenu-button" onclick="window.navegarConfig('tamanhos_roupas')"><i class="fas fa-tshirt"></i> Tam. Roupas</button>
-                <button class="config-submenu-button" onclick="window.navegarConfig('tamanhos_calcados')"><i class="fas fa-shoe-prints"></i> Tam. Calçados</button>
-            </aside>
-            <section id="config-content-area" class="config-content-area">
-                <p>Selecione uma opção no menu lateral.</p>
-            </section>
+        <div id="global-modal" class="modal">
+            <div class="modal-content" id="modal-content-area">
+            </div>
         </div>
     </div>
-</div>
 
-<script src="script.js"></script>
-
-</body>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="script.js"></script> </body>
 </html>

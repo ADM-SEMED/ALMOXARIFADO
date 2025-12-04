@@ -1,550 +1,298 @@
-/* =========================================
-   1. VARIÁVEIS E RESET GLOBAL
-   ========================================= */
+﻿/* Variáveis de cores */
 :root {
-    /* Paleta de Azuis Profissionais */
-    --primary: #2563eb;       /* Azul Royal Vibrante */
-    --primary-hover: #1d4ed8; /* Azul mais escuro para hover */
-    --primary-light: #eff6ff; /* Azul muito claro para fundos */
+    --color-primary: #007bff; /* Azul vibrante */
+    --color-secondary: #0056b3; /* Azul escuro para hover */
+    --color-background: #f8f9fa; /* Fundo claro (quase branco) */
+    --color-text: #212529; /* Texto escuro */
+    --color-game-accent: #ffc107; /* Amarelo para destaque gamificado */
     
-    /* Cores Funcionais */
-    --success: #10b981;       /* Verde Esmeralda */
-    --warning: #f59e0b;       /* Âmbar */
-    --danger: #ef4444;        /* Vermelho Suave */
-    --text-main: #1e293b;     /* Azul Acinzentado Escuro (Texto Principal) */
-    --text-muted: #64748b;    /* Cinza Azulado (Texto Secundário) */
-    
-    /* Fundos */
-    --bg-body: #f1f5f9;       /* Cinza Azulado muito claro */
-    --bg-card: #ffffff;       /* Branco Puro */
-    
-    /* UI Elements */
-    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-    --radius: 12px;           /* Bordas arredondadas modernas */
-    --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-* {
-    box-sizing: border-box;
-    outline: none;
+    /* NOVAS VARIÁVEIS PARA CONFIRMAÇÃO */
+    --color-success: #28a745; /* Verde para 'Sim' (Sucesso) */
+    --color-danger: #dc3545; /* Vermelho para 'Não' (Perigo/Cancelar) */
 }
 
 body {
-    font-family: 'Segoe UI', Inter, system-ui, sans-serif;
-    background-color: var(--bg-body);
-    color: var(--text-main);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: var(--color-background);
+    color: var(--color-text);
     margin: 0;
     padding: 0;
-    line-height: 1.6;
 }
 
-/* Scrollbar Personalizada */
-::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
-}
-::-webkit-scrollbar-track {
-    background: #f1f1f1; 
-}
-::-webkit-scrollbar-thumb {
-    background: #cbd5e1; 
-    border-radius: 4px;
-}
-::-webkit-scrollbar-thumb:hover {
-    background: #94a3b8; 
+/* Esconder tela principal antes do login */
+.hidden {
+    display: none !important;
 }
 
-/* Utilitários */
-.hidden { display: none !important; }
-
-/* =========================================
-   2. TELA DE LOGIN (Cartão Flutuante)
-   ========================================= */
-.login-container {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-    background: linear-gradient(135deg, var(--primary) 0%, #1e3a8a 100%);
-    position: fixed;
-    width: 100%;
-    z-index: 2000;
-}
-
-.login-box {
-    background: var(--bg-card);
-    padding: 40px;
-    border-radius: 20px;
-    box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1);
-    width: 100%;
-    max-width: 400px;
+/* --- Login Screen --- */
+#login-screen {
+    max-width: 350px;
+    margin: 100px auto;
+    padding: 30px;
+    background: white;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    border-radius: 12px;
     text-align: center;
-    animation: fadeInUp 0.5s ease-out;
 }
 
-.login-box h2 {
-    color: var(--primary);
-    margin-bottom: 25px;
-    font-size: 1.8rem;
-}
-
-.login-box input {
-    width: 100%;
-    padding: 12px 15px;
+#login-screen input {
+    width: 90%;
+    padding: 10px;
     margin: 10px 0;
-    border: 2px solid #e2e8f0;
-    border-radius: 8px;
-    font-size: 1rem;
-    transition: var(--transition);
+    border: 1px solid #ccc;
+    border-radius: 6px;
 }
 
-.login-box input:focus {
-    border-color: var(--primary);
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
-}
-
-.login-box button {
-    width: 100%;
-    margin-top: 20px;
-    padding: 12px;
-    font-size: 1.1rem;
-}
-
-/* =========================================
-   3. LAYOUT PRINCIPAL E HEADER
-   ========================================= */
-.app-container {
-    max-width: 1400px;
-    margin: 20px auto;
-    padding: 0 20px;
-    animation: fadeIn 0.5s ease-out;
-}
-
-.app-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background: var(--bg-card);
-    padding: 15px 30px;
-    border-radius: var(--radius);
-    box-shadow: var(--shadow-sm);
-    margin-bottom: 25px;
-    border-left: 5px solid var(--primary);
-}
-
-.app-header h1 {
-    font-size: 1.5rem;
-    color: var(--text-main);
-    margin: 0;
-}
-
-/* Botões do Header */
-.header-actions button {
-    background: transparent;
-    color: var(--text-muted);
-    border: 1px solid #e2e8f0;
-    padding: 8px 16px;
-    border-radius: 50px;
-    font-weight: 600;
+#btn-login {
+    background-color: var(--color-primary);
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 6px;
     cursor: pointer;
-    transition: var(--transition);
-    margin-left: 10px;
+    font-size: 16px;
+    margin-top: 15px;
 }
 
-.header-actions button:hover {
-    background: var(--primary-light);
-    color: var(--primary);
-    border-color: var(--primary);
-    transform: translateY(-2px);
+/* --- Main Application Layout --- */
+#main-app {
+    padding: 20px;
+    max-width: 1400px; 
+    margin: 0 auto;
 }
 
-.header-actions #logout-btn:hover {
-    background: #fef2f2;
-    color: var(--danger);
-    border-color: var(--danger);
+header h1 {
+    color: var(--color-primary);
+    border-bottom: 2px solid var(--color-primary);
+    padding-bottom: 10px;
 }
 
-/* =========================================
-   4. NAVEGAÇÃO (ABAS GAMIFICADAS)
-   ========================================= */
-.tabs {
+/* --- Tabs / Abas (Gamelizadas) --- */
+#tabs {
     display: flex;
-    gap: 10px;
-    overflow-x: auto;
-    padding-bottom: 5px; /* Espaço para scrollbar se necessário */
+    justify-content: space-between; /* Separa os botões da busca */
+    align-items: flex-end; /* Alinha na base */
     margin-bottom: 20px;
+    border-bottom: 3px solid #dee2e6;
+    padding-right: 10px; /* Um pequeno respiro na direita */
+}
+
+/* Container para os botões ficarem juntos na esquerda */
+.tabs-left {
+    display: flex;
 }
 
 .tab-button {
-    background: var(--bg-card);
-    color: var(--text-muted);
+    padding: 12px 20px;
     border: none;
-    padding: 12px 24px;
-    border-radius: 12px;
+    border-radius: 8px 8px 0 0;
     cursor: pointer;
-    font-weight: 600;
-    font-size: 0.95rem;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    transition: var(--transition);
-    box-shadow: var(--shadow-sm);
-    white-space: nowrap;
+    background-color: #e9ecef;
+    color: var(--color-text);
+    margin-right: 5px;
+    font-weight: bold;
+    transition: background-color 0.2s, color 0.2s;
 }
 
-.tab-button i {
-    font-size: 1.1rem;
-}
-
-.tab-button:hover {
-    background: #e0f2fe; /* Azul bem clarinho */
-    color: var(--primary);
-    transform: translateY(-2px);
+.tab-button:hover:not(.active) {
+    background-color: #dee2e6;
 }
 
 .tab-button.active {
-    background: var(--primary);
+    background-color: var(--color-primary);
     color: white;
-    box-shadow: 0 8px 15px -3px rgba(37, 99, 235, 0.4); /* Sombra azul brilhante */
-    transform: translateY(-1px);
+    border-bottom: 3px solid var(--color-game-accent);
 }
 
-/* =========================================
-   5. CONTEÚDO E TABELAS
-   ========================================= */
-.tab-content {
-    background: transparent;
+/* --- Estilos da Barra de Pesquisa --- */
+#search-container {
+    margin-bottom: 5px; /* Para alinhar visualmente com os botões */
 }
 
-/* Estilo dos Botões de Ação (Barra de Ferramentas) */
+.search-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+#input-search-item {
+    padding: 8px 35px 8px 15px; /* Espaço para o ícone na direita */
+    border: 1px solid #ccc;
+    border-radius: 20px; /* Borda arredondada moderna */
+    outline: none;
+    font-size: 14px;
+    width: 250px;
+    transition: border-color 0.3s, width 0.3s;
+}
+
+#input-search-item:focus {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 5px rgba(0, 123, 255, 0.3);
+}
+
+.search-icon {
+    position: absolute;
+    right: 15px;
+    color: #888;
+    pointer-events: none; /* O clique passa através do ícone */
+}
+
+/* --- Content Area --- */
+.tab-pane {
+    padding: 15px 0;
+}
+
+/* --- Botões de Ação (Abaixo das Abas) --- */
 .action-buttons {
-    background: var(--bg-card);
-    padding: 15px;
-    border-radius: var(--radius);
-    margin-bottom: 20px;
     display: flex;
     gap: 10px;
-    flex-wrap: wrap;
-    box-shadow: var(--shadow-sm);
-}
-
-/* Tabelas Profissionais */
-.data-table, .uniformes-table, .table-config, .table-geral {
-    width: 100%;
-    border-collapse: separate;
-    border-spacing: 0;
-    background: var(--bg-card);
-    border-radius: var(--radius);
-    overflow: hidden;
-    box-shadow: var(--shadow-md);
-    margin-bottom: 20px;
-}
-
-th {
-    background: #f8fafc;
-    color: var(--text-muted);
-    font-weight: 700;
-    text-transform: uppercase;
-    font-size: 0.75rem;
-    letter-spacing: 0.05em;
-    padding: 16px;
-    text-align: left;
-    border-bottom: 1px solid #e2e8f0;
-}
-
-td {
-    padding: 16px;
-    border-bottom: 1px solid #f1f5f9;
-    color: var(--text-main);
-    font-size: 0.95rem;
-    transition: background 0.2s;
-}
-
-/* Efeito Hover nas Linhas (Gamificação: Feedback visual) */
-tr:hover td {
-    background-color: var(--primary-light);
-    cursor: default;
-}
-
-/* Linha Selecionada */
-tr.selected-row td {
-    background-color: #dbeafe !important; /* Azul claro forte */
-    border-bottom-color: var(--primary);
-}
-
-/* =========================================
-   6. BOTÕES GERAIS
-   ========================================= */
-button {
-    cursor: pointer;
-    font-family: inherit;
-}
-
-/* Botões Principais */
-button[id^="btn-"], .btn-confirmar, .action-buttons button {
-    background: var(--primary);
-    color: white;
-    border: none;
-    padding: 10px 20px;
+    margin-bottom: 15px;
+    padding: 10px;
     border-radius: 8px;
-    font-weight: 600;
-    box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2);
-    transition: var(--transition);
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
+    background-color: white;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
 }
 
-button[id^="btn-"]:hover, .btn-confirmar:hover, .action-buttons button:hover {
-    background: var(--primary-hover);
-    transform: translateY(-2px);
-    box-shadow: 0 6px 8px -1px rgba(37, 99, 235, 0.3);
-}
-
-/* Botão Cancelar / Excluir */
-.btn-cancelar, .btn-danger {
-    background: #fee2e2;
-    color: var(--danger);
-    border: none;
-    padding: 8px 16px;
-    border-radius: 8px;
-    font-weight: 600;
-    transition: var(--transition);
-}
-
-.btn-cancelar:hover, .btn-danger:hover {
-    background: var(--danger);
+.action-buttons button {
+    background-color: var(--color-primary);
     color: white;
-    transform: translateY(-2px);
-}
-
-/* Botões Pequenos (Entrada/Saida na tabela) */
-td button {
-    padding: 6px 12px;
-    font-size: 0.8rem;
+    padding: 10px 15px;
+    border: none;
     border-radius: 6px;
-    margin-right: 5px;
-}
-
-/* =========================================
-   7. MODAIS (Estilo Glassmorphism Suave e Flutuante)
-   ========================================= */
-.modal, .config-modal {
-    display: none; /* Começa invisível por padrão */
-    position: fixed; /* Fixa na tela, flutuando sobre tudo */
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%; /* Ocupa a tela inteira */
-    overflow: auto; /* Permite rolar se o modal for muito alto */
-    
-    background-color: rgba(15, 23, 42, 0.75); /* Fundo escuro mais forte para foco */
-    backdrop-filter: blur(5px); /* Efeito de desfoque no fundo */
-    z-index: 9990; /* Garante que fique acima de tudo */
-    
-    /* Centralização vertical e horizontal suave via padding */
-    padding-top: 50px; 
-    padding-bottom: 50px;
-}
-
-#global-modal {
-    z-index: 9999 !important;
-}
-
-.modal-content, .config-modal-content {
-    background: var(--bg-card);
-    border-radius: 20px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); /* Sombra mais profunda */
-    animation: zoomIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-    
-    /* Centralização */
-    margin: 0 auto; /* Centraliza horizontalmente */
-    position: relative;
-    
-    width: 90%;
-    max-width: 600px; /* Largura padrão */
-    padding: 30px;
-}
-
-/* Modal de Configuração (Maior e mais alto) */
-.config-modal-content {
-    max-width: 1100px; 
-    height: 80vh; /* Ocupa 80% da altura da tela */
-    display: flex;
-    flex-direction: column;
-}
-
-.modal-content h3, .config-modal-title {
-    color: var(--primary);
-    border-bottom: 2px solid #f1f5f9;
-    padding-bottom: 15px;
-    margin-top: 0;
-    font-size: 1.5rem;
-}
-
-/* Inputs dentro do Modal */
-.modal-content input, .modal-content select, .modal-content textarea {
-    width: 100%;
-    padding: 12px;
-    margin: 8px 0 20px 0;
-    border: 1px solid #cbd5e1;
-    border-radius: 8px;
-    background: #f8fafc;
-    transition: var(--transition);
-}
-
-.modal-content input:focus, .modal-content select:focus {
-    background: white;
-    border-color: var(--primary);
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
-}
-
-/* Botão Fechar (X) */
-.close-button, .config-close-button {
-    position: absolute;
-    top: 20px;
-    right: 25px;
-    font-size: 2rem;
-    color: #94a3b8;
     cursor: pointer;
-    line-height: 0.7;
-    transition: color 0.2s;
+    font-weight: bold;
+    transition: background-color 0.2s;
 }
 
-.close-button:hover, .config-close-button:hover {
-    color: var(--danger);
+.action-buttons button:hover {
+    background-color: var(--color-secondary);
 }
 
-/* =========================================
-   8. ESTRUTURA DO MODAL DE CONFIGURAÇÃO
-   ========================================= */
-.config-modal-body {
+/* Botão APAGAR (SUPERADMIN) */
+.action-buttons .btn-apagar-super {
+    background-color: var(--color-danger);
+}
+.action-buttons .btn-apagar-super:hover {
+    background-color: #a71d2a;
+}
+
+/* Botões desabilitados (para o perfil 'comum') */
+.action-buttons button:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
+
+
+/* --- Caixa de Listagem (Tabela) --- */
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: white;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+}
+
+.data-table th, .data-table td {
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+
+.data-table th {
+    background-color: var(--color-primary);
+    color: white;
+    font-weight: 600;
+}
+
+.data-table tr:hover {
+    background-color: #eaf4ff; 
+    cursor: pointer;
+}
+
+.data-table .selected-row {
+    background-color: #cce5ff !important; 
+    font-weight: bold;
+}
+
+/* --- Modal/Caixa de Diálogo --- */
+.modal {
+    display: none; 
+    position: fixed; 
+    z-index: 1000; 
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0,0,0,0.4); 
+}
+
+.modal-content {
+    background-color: #fefefe;
+    margin: 10% auto; 
+    padding: 30px;
+    border: 1px solid #888;
+    width: 80%;
+    max-width: 500px;
+    border-radius: 10px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+}
+
+.modal-content input, .modal-content select {
+    width: 100%;
+    padding: 10px;
+    margin: 8px 0 15px 0;
+    display: inline-block;
+    border: 1px solid #ccc;
+    box-sizing: border-box;
+    border-radius: 4px;
+}
+
+.modal-buttons {
     display: flex;
-    flex: 1;
-    gap: 20px;
-    overflow: hidden;
+    justify-content: space-between; 
     margin-top: 20px;
 }
 
-.config-sidebar {
-    width: 250px;
-    border-right: 1px solid #e2e8f0;
-    padding-right: 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    overflow-y: auto;
+.modal-buttons button {
+    padding: 10px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
 }
 
-.config-content-area {
-    flex: 1;
-    overflow-y: auto;
-    padding-left: 10px;
+/* Botão SIM é VERDE */
+#btn-confirmar-sim, #btn-restaurar-sim {
+    background-color: var(--color-success);
+    color: white;
+    border: none;
+}
+#btn-confirmar-sim:hover, #btn-restaurar-sim:hover {
+    background-color: #1e7e34;
 }
 
-.config-submenu-button {
-    text-align: left;
-    background: transparent;
-    color: var(--text-muted);
-    padding: 12px 15px;
-    border-radius: 10px;
-    font-weight: 500;
-    box-shadow: none !important; /* Remove sombra padrão */
-    justify-content: flex-start; /* Alinha ícone e texto */
+/* Botão NÃO/Cancelar é VERMELHO */
+#btn-confirmar-nao, .btn-cancelar {
+    background-color: var(--color-danger); 
+    color: white;
+    border: none;
+}
+#btn-confirmar-nao:hover, .btn-cancelar:hover {
+    background-color: #bd2130;
 }
 
-.config-submenu-button:hover {
-    background: #f1f5f9;
-    color: var(--primary);
-    transform: translateX(4px); /* Move para direita */
+.hidden {
+    display: none !important; 
 }
 
-.config-submenu-button.active {
-    background: var(--primary-light);
-    color: var(--primary);
-    font-weight: 700;
-    border-left: 4px solid var(--primary);
-    border-radius: 4px 10px 10px 4px; /* Canto reto na esquerda */
+/* --- Estilos para alerta de estoque baixo --- */
+.data-table tr.low-stock td {
+    background-color: rgba(220,53,69,0.07);
 }
-
-/* =========================================
-   9. TAGS DE STATUS (BADGES)
-   ========================================= */
-.status-tag {
-    padding: 4px 12px;
-    border-radius: 20px;
-    font-size: 0.75rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
+.alert-badge {
     display: inline-block;
+    margin-left: 8px;
+    font-size: 0.95em;
+    color: var(--color-danger);
+    vertical-align: middle;
 }
 
-/* Cores das Tags */
-.conservacao-novo, .status-entregue, .status-ativo { 
-    background: #dcfce7; color: #166534; /* Verde */
-}
-.conservacao-bom, .status-em_separacao { 
-    background: #dbeafe; color: #1e40af; /* Azul */
-}
-.conservacao-regular, .status-pendente { 
-    background: #fef3c7; color: #92400e; /* Amarelo/Laranja */
-}
-.conservacao-danificado, .status-cancelado { 
-    background: #fee2e2; color: #991b1b; /* Vermelho */
-}
-.conservacao-inservivel { 
-    background: #1e293b; color: #f8fafc; /* Preto/Cinza */
-}
-
-/* =========================================
-   10. ANIMAÇÕES
-   ========================================= */
-@keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-}
-
-@keyframes fadeInUp {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes zoomIn {
-    from { opacity: 0; transform: scale(0.95); }
-    to { opacity: 1; transform: scale(1); }
-}
-
-/* =========================================
-   11. RESPONSIVIDADE
-   ========================================= */
-@media (max-width: 768px) {
-    .app-header {
-        flex-direction: column;
-        gap: 15px;
-        text-align: center;
-    }
-    
-    .config-modal-body {
-        flex-direction: column;
-    }
-    
-    .config-sidebar {
-        width: 100%;
-        border-right: none;
-        border-bottom: 1px solid #e2e8f0;
-        max-height: 150px;
-        margin-bottom: 15px;
-    }
-    
-    .tabs {
-        padding-bottom: 15px;
-    }
-    input[type="text"], 
-    textarea {
-        text-transform: uppercase;
-    }
-}
