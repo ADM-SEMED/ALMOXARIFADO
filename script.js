@@ -261,7 +261,11 @@ document.addEventListener('DOMContentLoaded', () => {
         if (canEdit) {
             buttonsHtml += `<button id="btn-incluir-novo"><i class="fas fa-plus-circle"></i> Incluir Novo</button>`;
         }
-
+    // --- NOVO CÓDIGO: BOTÃO DE RELATÓRIO DE ESTOQUE ---
+        // Disponível na aba 'item' para todos (ou restrinja se preferir)
+        if (tabName === 'item') {
+            buttonsHtml += `<button id="btn-relatorio-estoque" style="background-color: #6f42c1;"><i class="fas fa-file-pdf"></i> Relatório Estoque</button>`;
+        }
         // Inativar / Restaurar botões (mantidos)
         if (['item', 'local', 'categoria', 'usuarios'].includes(tabName) && canEdit) {
             buttonsHtml += `<button id="btn-inativar"><i class="fas fa-minus-circle"></i> Inativar</button>`;
@@ -383,6 +387,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         document.getElementById('btn-incluir-novo')?.addEventListener('click', () => showIncluirNovoModal(tabName));
+    // --- NOVO CÓDIGO: LISTENER DO RELATÓRIO ---
+        document.getElementById('btn-relatorio-estoque')?.addEventListener('click', () => handleGerarRelatorio());        
         document.getElementById('btn-inativar')?.addEventListener('click', () => handleInativar(tabName));
         document.getElementById('btn-restaurar')?.addEventListener('click', () => showRestaurarModal(tabName));
         document.getElementById('btn-apagar')?.addEventListener('click', () => handleApagar(tabName));
@@ -950,7 +956,80 @@ document.addEventListener('DOMContentLoaded', () => {
             if (e.key === 'Escape') closeModal();
         };
     }
+    async function handleGerarRelatorio() {
+        // 1. Verifica se as bibliotecas foram carregadas
+        if (!window.jspdf || !window.jspdf.jsPDF) {
+            alert("Erro: Biblioteca PDF não carregada. Verifique sua internet ou o index.html.");
+            return;
+        }
 
+        // 2. Busca os dados atualizados de Itens Ativos
+        const items = await fetchData('item', 'A');
+        if (!items || items.length === 0) {
+            alert("Não há itens para gerar o relatório.");
+            return;
+        }
+
+        // 3. Configuração do PDF
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF('p', 'mm', 'a4'); // Retrato, milímetros, A4
+
+        // Título e Data
+        const dataHoje = new Date().toLocaleDateString('pt-BR');
+        doc.setFontSize(16);
+        doc.text("Relatório de Conferência de Estoque (Inventário)", 14, 20);
+        doc.setFontSize(10);
+        doc.text(`Data de Emissão: ${dataHoje}`, 14, 27);
+        doc.text(`Total de Itens: ${items.length}`, 14, 32);
+
+        // 4. Montagem dos dados da Tabela
+        // Colunas: [Check, Item, Categoria, Qtd Sistema, Campo para Escrita]
+        const tableBody = items.map(item => {
+            return [
+                '', // Coluna vazia para desenharmos o quadrado (checkbox) depois
+                item.item, // Nome do item
+                item.categoria || '-',
+                item.quantidade, // Quantidade no sistema
+                '' // Vazio para escrita manual
+            ];
+        });
+
+        // 5. Geração da Tabela com AutoTable
+        doc.autoTable({
+            startY: 40,
+            head: [['Conf.', 'Item', 'Categoria', 'Qtd. Sistema', 'Qtd. Física (Contagem)']],
+            body: tableBody,
+            theme: 'grid', // Estilo com linhas de grade
+            styles: { 
+                fontSize: 9, 
+                cellPadding: 3,
+                valign: 'middle'
+            },
+            headStyles: {
+                fillColor: [0, 123, 255], // Cor azul do seu sistema
+                textColor: 255
+            },
+            columnStyles: {
+                0: { cellWidth: 15, halign: 'center' }, // Coluna do Checkbox
+                1: { cellWidth: 'auto' }, // Item
+                2: { cellWidth: 30 }, // Categoria
+                3: { cellWidth: 25, halign: 'center' }, // Qtd Sistema
+                4: { cellWidth: 40 } // Espaço para escrita
+            },
+            // Hook para desenhar o quadrado (checkbox) na primeira coluna
+            didDrawCell: function (data) {
+                if (data.section === 'body' && data.column.index === 0) {
+                    const doc = data.doc;
+                    // Desenha um quadrado vazio na célula
+                    // x, y, tamanho, tamanho
+                    doc.rect(data.cell.x + 4, data.cell.y + 2, 6, 6); 
+                }
+            }
+        });
+
+        // 6. Salvar/Baixar o PDF
+        doc.save(`Inventario_${dataHoje.replace(/\//g, '-')}.pdf`);
+    }
 
     function closeModal() {
         modal.style.display = 'none';
