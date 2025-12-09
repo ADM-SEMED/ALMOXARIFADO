@@ -1035,6 +1035,7 @@ document.addEventListener('DOMContentLoaded', () => {
         doc.save(`Inventario_${dataHoje.replace(/\//g, '-')}.pdf`);
     }
     // --- Modal: Editar Nome do Item ---
+    // --- Modal: Editar Nome e Estoque do Item ---
     async function showEditarNomeModal() {
         // 1. Verificações de segurança e seleção
         if (activeTab !== 'item') return;
@@ -1043,10 +1044,10 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        // 2. Busca os dados atuais do item selecionado
+        // 2. Busca os dados atuais do item selecionado (Nome e Quantidade)
         const { data: itemData, error } = await supabase
             .from('item')
-            .select('item')
+            .select('item, quantidade')
             .eq('id', selectedRowId)
             .single();
 
@@ -1056,18 +1057,18 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        // 3. Monta o HTML do Modal
+        // 3. Monta o HTML do Modal com os dois campos
         modalContentArea.innerHTML = `
-            <h3>Editar Nome do Produto</h3>
-            <p>Altere o nome abaixo. O sistema salvará automaticamente em maiúsculas.</p>
+            <h3>Editar Item e Estoque</h3>
+            <p>Faça as correções necessárias abaixo.</p>
             
-            <label>Nome Atual:</label>
-            <input type="text" value="${itemData.item}" disabled style="background-color: #e9ecef;">
-            
-            <label>Novo Nome:</label>
+            <label>Nome do Item:</label>
             <input type="text" id="input-editar-nome" value="${itemData.item}">
             
-            <p>Confirma a alteração?</p>
+            <label>Quantidade em Estoque (Correção Manual):</label>
+            <input type="number" id="input-editar-quantidade" value="${itemData.quantidade}" min="0">
+            
+            <p>Confirma as alterações?</p>
             <div class="modal-buttons">
                 <button id="btn-confirmar-nao" class="btn-cancelar">Cancelar</button>
                 <button id="btn-confirmar-sim" class="btn-confirmar">Salvar</button>
@@ -1081,7 +1082,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('btn-confirmar-sim').onclick = () => handleEditarNomeConfirm(selectedRowId);
         document.getElementById('btn-confirmar-nao').onclick = closeModal;
         
-        // Foco no campo de input para agilizar
+        // Foco no campo de nome para agilizar
         setTimeout(() => document.getElementById('input-editar-nome').focus(), 100);
 
         window.onkeydown = (e) => {
@@ -1091,30 +1092,43 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function handleEditarNomeConfirm(idItem) {
         const inputNome = document.getElementById('input-editar-nome');
+        const inputQuantidade = document.getElementById('input-editar-quantidade');
         
-        // Aplica a mesma formatação de quando cria um novo (Maiúsculas e sem acento)
+        // Tratamento do Nome: Maiúsculas e sem acentos
         const novoNome = inputNome.value.trim().toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        
+        // Tratamento da Quantidade: Garante que é número
+        const novaQuantidade = parseInt(inputQuantidade.value);
 
+        // Validações
         if (!novoNome) {
             alert("O nome não pode ficar vazio.");
             return;
         }
+        if (isNaN(novaQuantidade) || novaQuantidade < 0) {
+            alert("A quantidade informada é inválida.");
+            return;
+        }
 
-        // Atualiza no Banco de Dados
+        // Atualiza ambos os campos no Banco de Dados
         const { error } = await supabase
             .from('item')
-            .update({ item: novoNome })
+            .update({ 
+                item: novoNome,
+                quantidade: novaQuantidade
+            })
             .eq('id', idItem);
 
         if (error) {
-            console.error("Erro ao atualizar nome:", error);
+            console.error("Erro ao atualizar item:", error);
             alert(`Erro ao atualizar: ${error.message}`);
         } else {
-            alert("Nome do produto atualizado com sucesso!");
+            alert("Item e estoque atualizados com sucesso!");
             closeModal();
-            renderTab('item'); // Recarrega a tabela para mostrar o novo nome
+            renderTab('item'); // Recarrega a tabela para mostrar os novos dados
         }
     }
+
     function closeModal() {
         modal.style.display = 'none';
         window.onkeydown = null; 
