@@ -263,6 +263,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     // --- NOVO CÓDIGO: BOTÃO DE RELATÓRIO DE ESTOQUE ---
         // Disponível na aba 'item' para todos (ou restrinja se preferir)
+        if (tabName === 'item' && isSuperOrAdmin) {
+            buttonsHtml += `<button id="btn-editar-nome" style="background-color: #fd7e14;"><i class="fas fa-edit"></i> Editar Nome</button>`;
+        }
         if (tabName === 'item') {
             buttonsHtml += `<button id="btn-relatorio-estoque" style="background-color: #6f42c1;"><i class="fas fa-file-pdf"></i> Relatório Estoque</button>`;
         }
@@ -388,6 +391,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         document.getElementById('btn-incluir-novo')?.addEventListener('click', () => showIncluirNovoModal(tabName));
     // --- NOVO CÓDIGO: LISTENER DO RELATÓRIO ---
+        document.getElementById('btn-editar-nome')?.addEventListener('click', () => showEditarNomeModal());
         document.getElementById('btn-relatorio-estoque')?.addEventListener('click', () => handleGerarRelatorio());        
         document.getElementById('btn-inativar')?.addEventListener('click', () => handleInativar(tabName));
         document.getElementById('btn-restaurar')?.addEventListener('click', () => showRestaurarModal(tabName));
@@ -1030,7 +1034,87 @@ document.addEventListener('DOMContentLoaded', () => {
         // 6. Salvar/Baixar o PDF
         doc.save(`Inventario_${dataHoje.replace(/\//g, '-')}.pdf`);
     }
+    // --- Modal: Editar Nome do Item ---
+    async function showEditarNomeModal() {
+        // 1. Verificações de segurança e seleção
+        if (activeTab !== 'item') return;
+        if (!selectedRowId) {
+            alert('Por favor, clique em um item na lista para selecioná-lo primeiro.');
+            return;
+        }
 
+        // 2. Busca os dados atuais do item selecionado
+        const { data: itemData, error } = await supabase
+            .from('item')
+            .select('item')
+            .eq('id', selectedRowId)
+            .single();
+
+        if (error || !itemData) {
+            console.error('Erro ao buscar item:', error);
+            alert('Erro ao carregar dados do item.');
+            return;
+        }
+
+        // 3. Monta o HTML do Modal
+        modalContentArea.innerHTML = `
+            <h3>Editar Nome do Produto</h3>
+            <p>Altere o nome abaixo. O sistema salvará automaticamente em maiúsculas.</p>
+            
+            <label>Nome Atual:</label>
+            <input type="text" value="${itemData.item}" disabled style="background-color: #e9ecef;">
+            
+            <label>Novo Nome:</label>
+            <input type="text" id="input-editar-nome" value="${itemData.item}">
+            
+            <p>Confirma a alteração?</p>
+            <div class="modal-buttons">
+                <button id="btn-confirmar-nao" class="btn-cancelar">Cancelar</button>
+                <button id="btn-confirmar-sim" class="btn-confirmar">Salvar</button>
+            </div>
+        `;
+
+        // 4. Exibe o Modal
+        modal.style.display = 'block';
+
+        // 5. Configura os botões do Modal
+        document.getElementById('btn-confirmar-sim').onclick = () => handleEditarNomeConfirm(selectedRowId);
+        document.getElementById('btn-confirmar-nao').onclick = closeModal;
+        
+        // Foco no campo de input para agilizar
+        setTimeout(() => document.getElementById('input-editar-nome').focus(), 100);
+
+        window.onkeydown = (e) => {
+            if (e.key === 'Escape') closeModal();
+        };
+    }
+
+    async function handleEditarNomeConfirm(idItem) {
+        const inputNome = document.getElementById('input-editar-nome');
+        
+        // Aplica a mesma formatação de quando cria um novo (Maiúsculas e sem acento)
+        const novoNome = inputNome.value.trim().toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+        if (!novoNome) {
+            alert("O nome não pode ficar vazio.");
+            return;
+        }
+
+        // Atualiza no Banco de Dados
+        const { error } = await supabase
+            .from('item')
+            .update({ item: novoNome })
+            .eq('id', idItem);
+
+        if (error) {
+            console.error("Erro ao atualizar nome:", error);
+            alert(`Erro ao atualizar: ${error.message}`);
+        } else {
+            alert("Nome do produto atualizado com sucesso!");
+            closeModal();
+            renderTab('item'); // Recarrega a tabela para mostrar o novo nome
+        }
+    }
     function closeModal() {
         modal.style.display = 'none';
         window.onkeydown = null; 
