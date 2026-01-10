@@ -295,4 +295,51 @@ header h1 {
     color: var(--color-danger);
     vertical-align: middle;
 }
+/* Posicionamento do Filtro na extrema direita */
+#tabs {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 15px;
+    background-color: #fff;
+    border-bottom: 2px solid #ddd;
+}
+
+.tabs-left {
+    display: flex;
+}
+
+#search-container {
+    margin-left: auto;
+}
+
+#search-container.hidden {
+    display: none !important;
+}
+
+/* Estilização básica da tabela para os cabeçalhos */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+
+th {
+    background-color: #f2f2f2;
+    text-align: left;
+    padding: 12px;
+    border-bottom: 2px solid #ddd;
+    position: sticky;
+    top: 0;
+}
+
+td {
+    padding: 10px;
+    border-bottom: 1px solid #eee;
+}
+
+tr:hover {
+    background-color: #f9f9f9;
+    cursor: pointer;
+}
 
